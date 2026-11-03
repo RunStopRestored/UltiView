@@ -46,6 +46,7 @@ shortcuts:
     toggleMenu:       Ultimate menu
     togglePause:      Pause / resume
     resetMachine:     Reset
+    toggleC64Keys:    Keyboard to C64 on / off
 
   view:
     toggleBrowser:    Browser panel

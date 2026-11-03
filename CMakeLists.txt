@@ -72,11 +72,12 @@ set (JUCE_ENABLE_MODULE_SOURCE_GROUPS ON)
 set (JUCE_BUILD_EXTRAS OFF)
 set (JUCE_BUILD_EXAMPLES OFF)
 
-# Soft pin on develop: the fixes land there months before a tagged release.
+# Pinned to develop as of the v1.4.4 release (2026-09-22): later develop
+# replaced MessageBoxOptions::withButton (text) (2026-10-15)
 FetchContent_Declare (JUCE
 					GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-					GIT_TAG origin/develop
-					GIT_SHALLOW TRUE
+					GIT_TAG b7baf33193ef9f7f6b95d5a34df7720fe528cddd
+					GIT_SHALLOW FALSE
 					SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/JUCE)
 FetchContent_MakeAvailable (JUCE)
 
@@ -142,7 +143,13 @@ FetchContent_Declare (boost_regex
 					SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/boost_regex
 					SOURCE_SUBDIR nonexistent)
 FetchContent_MakeAvailable (boost_regex)
-if (WIN32)
+# Windows without the ClangCL toolset: build with MSVC itself
+option (ULTRA_MSVC "Windows: build with MSVC instead of clang-cl" OFF)
+
+if (WIN32 AND ULTRA_MSVC)
+	set_target_properties (fmt PROPERTIES CXX_SCAN_FOR_MODULES OFF)
+	target_compile_options (fmt PRIVATE /fp:precise)
+elseif (WIN32)
 	# no C++20 modules - clang-cl has no /scanDependencies. The inherited
 	# /fp:fast would strip the inf/nan handling fmt's float paths rely on
 	set_target_properties (fmt PROPERTIES VS_PLATFORM_TOOLSET ClangCL CXX_SCAN_FOR_MODULES OFF)
@@ -319,12 +326,16 @@ if (APPLE)
 		VERBATIM)
 endif()
 
-if (WIN32)
+if (WIN32 AND ULTRA_MSVC)
+	target_compile_options(ultraView PRIVATE /fp:fast /arch:AVX2 /utf-8 /bigobj)
+elseif (WIN32)
 	target_compile_options(ultraView PRIVATE -Wno-missing-braces /clang:-ffast-math /clang:-fno-finite-math-only /clang:-msse4.2 /clang:-mfma /clang:-ffp-contract=fast /clang:-funsafe-math-optimizations -showFilenames)
 endif()
 
-if (WIN32)
+if (WIN32 AND NOT ULTRA_MSVC)
 	set_target_properties(ultraView PROPERTIES VS_PLATFORM_TOOLSET ClangCL)
+endif()
+if (WIN32)
 	# The debugger starts in the repo root, where the naked dev Data lives
 	set_target_properties(ultraView PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 	set_property(TARGET ultraView APPEND_STRING PROPERTY LINK_FLAGS_DEBUG " /INCREMENTAL:NO")

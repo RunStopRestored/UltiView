@@ -1,0 +1,36 @@
+diff --git a/modules/lime_ShaderToyComponent/Source/lime_ShaderToyComponent.cpp b/modules/lime_ShaderToyComponent/Source/lime_ShaderToyComponent.cpp
+index 6f2c2d4..24c2bf9 100644
+--- a/modules/lime_ShaderToyComponent/Source/lime_ShaderToyComponent.cpp
++++ b/modules/lime_ShaderToyComponent/Source/lime_ShaderToyComponent.cpp
+@@ -928,13 +928,21 @@ void ShaderToyComponent::fileChanged ( const juce::File& file, gin::FileSystemWa
+ void ShaderToyComponent::processRecursive ( std::string& source, std::set<std::string>& dependencies )
+ {
+ 	// Matches #include "filename" or #include <filename>
++#if defined ( _MSC_VER ) && ! defined ( __clang__ )
++	// MSVC's <regex> has no multiline: a line start is the string start or a
++	// newline, which stays (group 1); the include line is group 2
++	static const std::regex	includeRegex ( R"((^|\n)([ \t]*#include\s+["<]([^">]+)[">]))" );
++	constexpr auto			lineGroup = 2, nameGroup = 3;
++#else
+ 	static const std::regex	includeRegex ( R"(^\s*#include\s+["<]([^">]+)[">])", std::regex_constants::multiline );
++	constexpr auto			lineGroup = 0, nameGroup = 1;
++#endif
+ 
+ 	std::smatch	match;
+ 
+ 	while ( std::regex_search ( source, match, includeRegex ) )
+ 	{
+-		auto	fileName = match[ 1 ].str ();
++		auto	fileName = match[ nameGroup ].str ();
+ 
+ 		// Add to our hot-reload tracking list
+ 		dependencies.insert ( fileName );
+@@ -944,7 +952,7 @@ void ShaderToyComponent::processRecursive ( std::string& source, std::set<std::s
+ 		processRecursive ( includeContent, dependencies );
+ 
+ 		// Replace the #include line with the processed content
+-		source.replace ( match.position (), match.length (), includeContent );
++		source.replace ( match.position ( lineGroup ), match.length ( lineGroup ), includeContent );
+ 	}
+ }
+ //-----------------------------------------------------------------------------

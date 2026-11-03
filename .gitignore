@@ -4,3 +4,5 @@ Builds
 bin
 /Installer/win/stage
 /Installer/win/bin
+/Builds_*.log
+/dist

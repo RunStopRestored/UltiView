@@ -2,6 +2,7 @@ section,verb,keys
 machine,toggleMenu,Ctrl+M
 machine,togglePause,Ctrl+P
 machine,resetMachine,Ctrl+R
+machine,toggleC64Keys,Ctrl+K
 view,toggleBrowser,Ctrl+B
 view,toggleSettings,Ctrl+,
 view,toggleFullscreen,F11|Alt+Enter

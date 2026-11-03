@@ -32,10 +32,14 @@ bool GUI_ultraView::keyPressed ( const juce::KeyPress& key )
 		else if ( shortcutsScreen.isVisible () )
 			actionListenerCallback ( "closeShortcuts" );
 		else
-			return false;
+			return sendC64Key ( key );		// RUN/STOP
 
 		return true;
 	}
+
+	// Typing goes to the C64 ahead of the plain-key shortcuts ("?")
+	if ( sendC64Key ( key ) )
+		return true;
 
 #if ULTRA_INSPECTOR
 	if ( key == juce::KeyPress ( juce::KeyPress::F11Key, juce::ModifierKeys::ctrlModifier, 0 ) )
@@ -78,5 +82,34 @@ bool GUI_ultraView::keyPressed ( const juce::KeyPress& key )
 		return false;
 
 	return true;
+}
+//-----------------------------------------------------------------------------
+
+bool GUI_ultraView::sendC64Key ( const juce::KeyPress& key )
+{
+	if ( ! c64Keys || aboutScreen.isVisible () || shortcutsScreen.isVisible () )
+		return false;
+
+	const auto	petscii = C64Keyboard::petsciiFor ( key );
+
+	if ( petscii < 0 )
+		return false;
+
+	c64Keyboard.send ( petscii, settings->get<juce::String> ( "network/last-ip" ).trim (),
+					   settings->get<juce::String> ( "network/password" ) );
+	return true;
+}
+//-----------------------------------------------------------------------------
+
+void GUI_ultraView::showC64KeysState ()
+{
+	juce::String	title;
+
+	{
+		const juce::ScopedLock	sl ( titleLock );
+		title = connectedTitle;
+	}
+
+	setTitleStatus ( title + ( c64Keys ? " - keyboard to C64" : " - keyboard to ultraView" ) );
 }
 //-----------------------------------------------------------------------------

@@ -27,6 +27,7 @@
 #include "ultra-shared/Network/AsyncNetwork.h"
 #include "ultra-shared/Network/C64u_Scanner.h"
 #include "ultra-shared/Network/C64u_UDP_Receiver.h"
+#include "Remote/C64Keyboard.h"
 
 //-----------------------------------------------------------------------------
 
@@ -198,6 +199,13 @@ private:
 
 	// The last pause/resume this app sent, for the pause toggle key
 	bool	machinePaused = false;
+
+	// Remote keyboard: typed keys go to the C64's keyboard buffer while on
+	// (Ctrl+K toggles); Ctrl combinations, F11 and F12 stay ultraView's
+	C64Keyboard	c64Keyboard;
+	bool		c64Keys = true;
+	bool sendC64Key ( const juce::KeyPress& key );
+	void showC64KeysState ();
 
 	juce::SharedResourcePointer<GUI_TooltipWindow>	tooltipWindow;
 	bool	showRasterTime = false;

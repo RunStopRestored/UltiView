@@ -152,6 +152,11 @@ void GUI_ultraView::actionListenerCallback ( const juce::String& message )
 	{
 		actionListenerCallback ( "c64action reboot" );
 	}
+	else if ( cmd == "toggleC64Keys" )
+	{
+		c64Keys = ! c64Keys;
+		showC64KeysState ();
+	}
 	else if ( cmd == "toggleMenu" )
 	{
 		actionListenerCallback ( "c64action menu_button" );
