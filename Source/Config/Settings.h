@@ -29,6 +29,8 @@ private:
 			{ "network",	"last-ip",			"" },
 			{ "network",	"password",			"" },
 
+			{ "c64files",	"path",				"/" },
+
 			{ "paths",		"user",			juce::File::getSpecialLocation ( juce::File::SpecialLocationType::userDocumentsDirectory ).getChildFile ( juce::String ( ProjectInfo::projectName ) + " user-data" ).getFullPathName ().toStdString () },
 			{ "paths",		"apps",			"" },
 		};

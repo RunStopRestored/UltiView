@@ -4,6 +4,7 @@ machine,togglePause,Ctrl+P
 machine,resetMachine,Ctrl+R
 machine,toggleC64Keys,Ctrl+K
 machine,toggleStreamPause,Ctrl+S
+machine,toggleC64Files,Ctrl+O
 view,toggleBrowser,Ctrl+B
 view,toggleSettings,Ctrl+,
 view,toggleFullscreen,F11|Alt+Enter

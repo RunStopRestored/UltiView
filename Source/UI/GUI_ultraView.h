@@ -28,6 +28,7 @@
 #include "ultra-shared/Network/C64u_Scanner.h"
 #include "ultra-shared/Network/C64u_UDP_Receiver.h"
 #include "Remote/C64Keyboard.h"
+#include "Remote/C64DiskRunner.h"
 
 //-----------------------------------------------------------------------------
 
@@ -132,6 +133,13 @@ private:
 	void c64_reboot ();
 	void c64_run ( const juce::String& type, const juce::MemoryBlock& crtData, const juce::String& filename );
 	void c64_forceSystemMode ( const juce::String& mode );
+
+	// Runs a file from the C64u's own storage (the C64 files panel, Ctrl+O)
+	void c64_runRemoteFile ( const juce::String& path );
+	C64DiskRunner	diskRunner;
+
+	// A cartridge may be running (unknown at startup): a disk run reboots first
+	bool			cartridgeActive = true;
 	void c64_forceJoystickSwapper ( const juce::String& mode );
 
 	// The C64u audio stream's rate

@@ -29,12 +29,13 @@ public:
 	// Queue a key for the C64u at ip
 	void send ( int petscii, const juce::String& ip, const juce::String& password );
 
+	// One blocking REST request; the reply body into reply when given. True on
+	// HTTP 200. Also used by C64DiskRunner
+	static bool request ( const juce::String& ip, const juce::String& password, const juce::String& method,
+						  const juce::String& endpoint, const juce::StringArray& params, juce::MemoryBlock* reply );
+
 private:
 	void run () override;
-
-	// One REST request; the reply body into reply when given. True on HTTP 200
-	bool request ( const juce::String& ip, const juce::String& password, const juce::String& method,
-				   const juce::String& endpoint, const juce::StringArray& params, juce::MemoryBlock* reply );
 
 	struct Key
 	{

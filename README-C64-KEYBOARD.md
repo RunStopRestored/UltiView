@@ -43,6 +43,28 @@ paused, the reconnect loop does not touch the streams.
 Ctrl+S again resumes: ultraView starts both streams again, aimed at this PC,
 taking them back from whoever has them.
 
+## C64U files (Ctrl+O)
+
+The Ultimate's own menu closes on the first key that comes over the network, so
+ultraView has its own browser for the C64U's storage (SD, USB0, Flash, Temp).
+It lists folders over the C64U's FTP server (the REST API has no listing) and
+runs files with the REST runners, straight from the card, without uploading.
+
+Keys: Up/Down, Enter (open a folder or run a file), Backspace or Left (up a
+folder), Right (open a folder), letters (jump to the first name starting with
+them), Esc or Ctrl+O (close). Double-click works too. The last folder is kept.
+
+| File | What happens |
+|---|---|
+| .prg | `PUT /v1/runners:run_prg?file=` |
+| .crt | `PUT /v1/runners:run_crt?file=` (a reboot first if the last cartridge may have been an EasyFlash, as with dropped files) |
+| .sid, .mod | `sidplay` / `modplay` |
+| .d64 .g64 .d71 .g71 .d81 | drive A set to 1541/1571/1581 and switched on, the image mounted, the C64 reset; at READY. `LOAD"*",8,1` is written on the screen and RETURN, RUN, RETURN go into the keyboard buffer, so the first program loads and runs |
+
+PRG, CRT and disk runs look the name up in Games.csv for PAL/NTSC and the
+joystick port, as dropped files do. A disk run after a cartridge reboots the
+machine first, since a cartridge survives a reset.
+
 ## Building on Windows without clang-cl or 7-Zip
 
 ```

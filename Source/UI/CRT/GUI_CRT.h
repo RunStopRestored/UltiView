@@ -57,6 +57,7 @@ public:
 	void setStreamAddress ( const juce::String& address ) { overlay.setStreamAddress ( address ); }
 	bool isStreamStalled () const { return overlay.isStreamStalled (); }
 	void setStreamPaused ( bool paused ) { overlay.setStreamPaused ( paused ); }
+	void toggleC64Files () { overlay.toggleC64Files (); }
 	void setFirstLuma ( const bool isFirstLuma );
 
 	void showRasterTime ( const bool show );

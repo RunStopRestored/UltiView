@@ -56,6 +56,10 @@ GUI_Overlay::GUI_Overlay ()
 	}
 
 	addChildComponent ( pausedBanner );
+	addChildComponent ( c64Files );
+
+	pausedBanner.addComponentListener ( this );
+	c64Files.addComponentListener ( this );
 
 	//
 	// Setup C64u UDP receiver callback for live preview
@@ -97,6 +101,9 @@ GUI_Overlay::GUI_Overlay ()
 
 GUI_Overlay::~GUI_Overlay ()
 {
+	pausedBanner.removeComponentListener ( this );
+	c64Files.removeComponentListener ( this );
+
 	shutdownGL ();
 }
 //-----------------------------------------------------------------------------
@@ -153,6 +160,22 @@ void GUI_Overlay::setStreamPaused ( const bool paused )
 	// Snow until the first frame arrives again, as at startup; the address
 	// comes back with setupNetworking
 	setSignalLost ( true );
+}
+//-----------------------------------------------------------------------------
+
+void GUI_Overlay::componentVisibilityChanged ( juce::Component& component )
+{
+	if ( &component == &pausedBanner && pausedBanner.isVisible () != streamPaused )
+		pausedBanner.setVisible ( streamPaused );
+
+	if ( &component == &c64Files && c64Files.isVisible () != c64Files.isOpen () )
+	{
+		c64Files.setVisible ( c64Files.isOpen () );
+
+		// Hiding took the keyboard focus away; typing must not reach the C64
+		if ( c64Files.isOpen () )
+			c64Files.restoreFocus ();
+	}
 }
 //-----------------------------------------------------------------------------
 

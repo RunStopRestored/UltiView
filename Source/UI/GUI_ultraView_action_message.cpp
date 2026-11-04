@@ -52,6 +52,7 @@ void GUI_ultraView::actionListenerCallback ( const juce::String& message )
 
 			const auto	cartType = juce::ByteOrder::bigEndianShort ( static_cast<const char*>( mb.getData () ) + 22 );
 			loadedEasyFlash = cartType == 32;
+			cartridgeActive = true;
 
 			if ( wasEasyFlash )
 			{
@@ -64,12 +65,21 @@ void GUI_ultraView::actionListenerCallback ( const juce::String& message )
 
 		c64_run ( extension, mb, params[ 0 ] );
 	}
+	else if ( cmd == "c64runremote" )
+	{
+		c64_runRemoteFile ( params[ 0 ] );
+	}
+	else if ( cmd == "toggleC64Files" )
+	{
+		if ( mainScreen.crt.isVisible () )
+			mainScreen.crt.toggleC64Files ();
+	}
 	else if ( cmd == "c64action" )
 	{
 		network.put ( "v1/machine:" + params[ 0 ], {} );
 
 		if ( params[ 0 ] == "reboot" || params[ 0 ] == "poweroff" )
-			loadedEasyFlash = false;
+			cartridgeActive = loadedEasyFlash = false;
 
 		if ( params[ 0 ] == "pause" )
 			machinePaused = true;

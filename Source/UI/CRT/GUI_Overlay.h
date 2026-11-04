@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 
 #include "UI/Components/GUI_IconButton.h"
+#include "UI/CRT/GUI_C64Files.h"
 #include "ultra-shared/UI/Components/GUI_SVG_Button.h"
 
 #include "ultra-shared/Network/C64u_UDP_Receiver.h"
@@ -14,6 +15,7 @@
 class GUI_Overlay final
 	: public lime::CRTEmulation
 	, public juce::DragAndDropTarget
+	, private juce::ComponentListener
 {
 public:
 	GUI_Overlay ();
@@ -34,6 +36,9 @@ public:
 	// Paused: the video port is closed for other listeners, the last frame
 	// stays on screen under a banner
 	void setStreamPaused ( bool paused );
+
+	// Browser for the C64u's SD / USB storage
+	void toggleC64Files () { c64Files.isOpen () ? c64Files.close () : c64Files.open (); }
 
 	GUI_SVG_Button	openBrowser { "browser", { "crt/browser_close", "crt/browser_open" } };
 	GUI_SVG_Button	openSettings { "open", { "crt/settings_close", "crt/settings_open" } };
@@ -58,6 +63,13 @@ private:
 		void paint ( juce::Graphics& g ) override;
 	};
 	PausedBanner	pausedBanner;
+
+	GUI_C64Files	c64Files;
+
+	// lime's ShaderToyComponent shows all children on mouse movement and hides
+	// them when it stops (the hover buttons); the banner and the files panel
+	// follow their own state instead, put back here
+	void componentVisibilityChanged ( juce::Component& component ) override;
 
 	// Action buttons
 	juce::Component		actionButtons { "action-buttons" };
