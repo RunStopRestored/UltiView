@@ -157,6 +157,10 @@ void GUI_ultraView::actionListenerCallback ( const juce::String& message )
 		c64Keys = ! c64Keys;
 		showC64KeysState ();
 	}
+	else if ( cmd == "toggleStreamPause" )
+	{
+		toggleStreamPause ();
+	}
 	else if ( cmd == "toggleMenu" )
 	{
 		actionListenerCallback ( "c64action menu_button" );

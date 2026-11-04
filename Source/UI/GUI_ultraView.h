@@ -207,6 +207,12 @@ private:
 	bool sendC64Key ( const juce::KeyPress& key );
 	void showC64KeysState ();
 
+	// Stream pause (Ctrl+S): stops the C64u's streams and closes both UDP
+	// ports so another program (Claude's capture tools) can use them; the
+	// reconnect loop leaves the streams alone until resumed
+	std::atomic<bool>	streamsPaused = false;
+	void toggleStreamPause ();
+
 	juce::SharedResourcePointer<GUI_TooltipWindow>	tooltipWindow;
 	bool	showRasterTime = false;
 

@@ -65,9 +65,50 @@ void GUI_ultraView::timerCallback ()
 }
 //-----------------------------------------------------------------------------
 
+void GUI_ultraView::toggleStreamPause ()
+{
+	if ( ! streamsPaused )
+	{
+		streamsPaused = true;
+		healWatchdog.stopTimer ();
+
+		// Only stop what we started: a stream someone else already took over
+		// stays theirs
+		if ( streamsStarted.exchange ( false ) )
+		{
+			network.put ( "v1/streams/video:stop" );
+			network.put ( "v1/streams/audio:stop" );
+		}
+
+		mainScreen.crt.setStreamPaused ( true );
+		c64uReceiver.stop ();
+		netReceiving = false;
+
+		juce::String	title;
+		{
+			const juce::ScopedLock	sl ( titleLock );
+			title = connectedTitle;
+		}
+		setTitleStatus ( title + " - stream paused" );
+
+		Z_LOG ( "Streams paused, UDP ports released" );
+		return;
+	}
+
+	streamsPaused = false;
+	mainScreen.crt.setStreamPaused ( false );
+
+	Z_LOG ( "Streams resumed" );
+
+	// Probe and start the streams right away instead of waiting out the tick
+	probeFailures = 0;
+	reconnectTick ();
+}
+//-----------------------------------------------------------------------------
+
 void GUI_ultraView::reconnectTick ()
 {
-	if ( netReceiving || netScanning || netProbing )
+	if ( streamsPaused || netReceiving || netScanning || netProbing )
 		return;
 
 	// A heal cycle is still judging its streams; restarting them here would
@@ -95,6 +136,10 @@ void GUI_ultraView::reconnectTick ()
 	network.get ( "v1/info", {}, [ this, lastIP ] ( const juce::var& result, const int httpCode )
 	{
 		netProbing = false;
+
+		// Paused while probing: keep the "stream paused" title
+		if ( streamsPaused )
+			return;
 
 		// A refusal means the machine is there; keep watching it instead of
 		// sweeping the network
@@ -152,10 +197,15 @@ static juce::String retargetToOwnIP ( const juce::String& address, const juce::S
 
 void GUI_ultraView::setupNetworking ()
 {
+	// A scan or probe that finished after the pause key must not take the
+	// streams back
+	if ( streamsPaused )
+		return;
+
 	// Start stream
 	network.get ( "v1/configs/Data Streams", {}, [ this ] ( const juce::var& result, const int httpCode )
 	{
-		if ( httpCode < 200 || httpCode >= 300 )
+		if ( httpCode < 200 || httpCode >= 300 || streamsPaused )
 			return;
 
 		auto	videoAddress = result[ "Data Streams" ][ "Stream VIC to" ].toString ();
@@ -176,13 +226,25 @@ void GUI_ultraView::setupNetworking ()
 
 			juce::MessageManager::callAsync ( [ this, videoAddress, audioAddress ]
 			{
+				// Paused while the start was on its way: take it back
+				if ( streamsPaused && streamsStarted.exchange ( false ) )
+				{
+					network.put ( "v1/streams/video:stop" );
+					network.put ( "v1/streams/audio:stop" );
+				}
+
 				videoStreamTarget = videoAddress;
 				audioStreamTarget = audioAddress;
-				healWatchdog.startTimer ( healWatchdogMs );
+
+				if ( ! streamsPaused )
+					healWatchdog.startTimer ( healWatchdogMs );
 			} );
 		} );
 
 		mainScreen.crt.setStreamAddress ( videoAddress );
+
+		if ( streamsPaused )
+			return;
 
 		c64uReceiver.stop ();
 		UI::sendGlobalMessage ( "stream-status audio {}", c64uReceiver.start ( audioAddress ).quoted () );
@@ -193,6 +255,9 @@ void GUI_ultraView::setupNetworking ()
 void GUI_ultraView::healStreams ()
 {
 	healWatchdog.stopTimer ();
+
+	if ( streamsPaused )
+		return;
 
 	const auto	ownIP = C64uScanner::localAddressFor ( settings->get<juce::String> ( "network/last-ip" ) );
 	if ( ownIP.isEmpty () )

@@ -55,6 +55,8 @@ GUI_Overlay::GUI_Overlay ()
 		addAndMakeVisible ( actionButtons );
 	}
 
+	addChildComponent ( pausedBanner );
+
 	//
 	// Setup C64u UDP receiver callback for live preview
 	//
@@ -131,8 +133,49 @@ void GUI_Overlay::setStreamAddress ( const juce::String& address )
 }
 //-----------------------------------------------------------------------------
 
+void GUI_Overlay::setStreamPaused ( const bool paused )
+{
+	{
+		const juce::ScopedLock lock ( streamLock );
+
+		streamPaused = paused;
+
+		// Stopping the thread fires no status change: the last frame stays
+		if ( paused )
+			c64uReceiver.stop ();
+	}
+
+	pausedBanner.setVisible ( paused );
+
+	if ( paused )
+		return;
+
+	// Snow until the first frame arrives again, as at startup; the address
+	// comes back with setupNetworking
+	setSignalLost ( true );
+}
+//-----------------------------------------------------------------------------
+
+void GUI_Overlay::PausedBanner::paint ( juce::Graphics& g )
+{
+	const auto	area = getLocalBounds ().toFloat ().reduced ( 1.0f );
+
+	g.setColour ( juce::Colours::black.withAlpha ( 0.75f ) );
+	g.fillRoundedRectangle ( area, 8.0f );
+
+	g.setColour ( juce::Colours::orange );
+	g.drawRoundedRectangle ( area, 8.0f, 2.0f );
+
+	g.setFont ( juce::FontOptions ( 18.0f, juce::Font::bold ) );
+	g.drawText ( "STREAM PAUSED  -  Ctrl+S resumes", getLocalBounds (), juce::Justification::centred );
+}
+//-----------------------------------------------------------------------------
+
 void GUI_Overlay::startVideoStream ()
 {
+	if ( streamPaused )
+		return;
+
 	if ( c64uStreamAddress.isNotEmpty () )
 		UI::sendGlobalMessage ( "stream-status video {}", c64uReceiver.start ( c64uStreamAddress ).quoted () );
 }

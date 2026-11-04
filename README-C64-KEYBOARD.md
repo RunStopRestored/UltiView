@@ -31,6 +31,18 @@ which). Ctrl shortcuts, F11 and F12 stay ultraView's.
 Only programs that read the keyboard buffer see these keys (BASIC, the KERNAL,
 Ultimidi); programs that scan the keyboard matrix themselves do not.
 
+## Stream pause
+
+Ctrl+S pauses the stream so another program on this PC (Claude's C64u capture
+tools, for example) can use it without quitting ultraView. ultraView sends
+`PUT /v1/streams/video:stop` and `audio:stop` (only if it started them) and
+closes its UDP ports (11000 video, 11001 audio). The last frame stays on screen
+under a "STREAM PAUSED" banner, and the title shows "stream paused". While
+paused, the reconnect loop does not touch the streams.
+
+Ctrl+S again resumes: ultraView starts both streams again, aimed at this PC,
+taking them back from whoever has them.
+
 ## Building on Windows without clang-cl or 7-Zip
 
 ```

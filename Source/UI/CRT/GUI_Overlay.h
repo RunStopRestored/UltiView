@@ -31,6 +31,10 @@ public:
 	void setStreamAddress ( const juce::String& address );
 	bool isStreamStalled () const { return c64uReceiver.isStalled (); }
 
+	// Paused: the video port is closed for other listeners, the last frame
+	// stays on screen under a banner
+	void setStreamPaused ( bool paused );
+
 	GUI_SVG_Button	openBrowser { "browser", { "crt/browser_close", "crt/browser_open" } };
 	GUI_SVG_Button	openSettings { "open", { "crt/settings_close", "crt/settings_open" } };
 
@@ -43,7 +47,17 @@ private:
 	lime::openGL_Image		c64uBuffer[ 2 ] = { { 1, 384, 272 }, { 1, 384, 272 } };
 	C64u_UDP_Receiver		c64uReceiver { C64u_UDP_Receiver::streamType::video };
 
+	bool					streamPaused = false;
+
 	void startVideoStream ();
+
+	// "Stream paused" banner over the frozen frame
+	struct PausedBanner final : juce::Component
+	{
+		PausedBanner () : juce::Component ( "stream-paused" ) { setInterceptsMouseClicks ( false, false ); }
+		void paint ( juce::Graphics& g ) override;
+	};
+	PausedBanner	pausedBanner;
 
 	// Action buttons
 	juce::Component		actionButtons { "action-buttons" };

@@ -47,6 +47,7 @@ shortcuts:
     togglePause:      Pause / resume
     resetMachine:     Reset
     toggleC64Keys:    Keyboard to C64 on / off
+    toggleStreamPause: Stream pause / resume (frees it for other apps)
 
   view:
     toggleBrowser:    Browser panel
