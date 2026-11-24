@@ -1,0 +1,35 @@
+diff --git a/Network/C64u_UDP_Receiver.cpp b/Network/C64u_UDP_Receiver.cpp
+index e2fb3cf..5a3f194 100644
+--- a/Network/C64u_UDP_Receiver.cpp
++++ b/Network/C64u_UDP_Receiver.cpp
+@@ -84,7 +84,16 @@ void C64u_UDP_Receiver::stop ()
+ 	if ( currentMulticastAddress.isNotEmpty () )
+ 		socket->leaveMulticast ( currentMulticastAddress );
+ 
+-	stopThread ( -1 );
++	// The loop looks at the exit flag every 50 ms; a bounded wait so a thread
++	// stuck anyway cannot hang its caller (and the app) forever
++	if ( ! stopThread ( 2000 ) )
++	{
++		Z_ERR ( "C64u UDP receiver thread did not stop: " << getThreadName () );
++
++		// Closing the socket wakes a read that still waits
++		socket->shutdown ();
++		stopThread ( 1000 );
++	}
+ 
+ 	socket->shutdown ();
+ 	socket.reset ();
+@@ -129,7 +138,11 @@ void C64u_UDP_Receiver::run ()
+ 
+ 		if ( socket->waitUntilReady ( true, 50 ) > 0 )
+ 		{
+-			const auto	bytesRead = socket->read ( &tempBuffer.header[ 0 ], packetSize, true );
++			// One datagram, without blocking: a blocking read keeps calling
++			// recv until packetSize bytes have come, so a short datagram with
++			// nothing after it parks this thread for good, and stop () (and
++			// the app's shutdown behind it) with it. Short ones are dropped
++			const auto	bytesRead = socket->read ( &tempBuffer.header[ 0 ], packetSize, false );
+ 
+ 			if ( bytesRead == packetSize )
+ 			{

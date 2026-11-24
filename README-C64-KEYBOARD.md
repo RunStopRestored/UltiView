@@ -118,6 +118,7 @@ machine first, since a cartridge survives a reset.
 ```
 git submodule update --init --recursive
 git -C modules/lime apply ../../patches/lime-msvc-regex.patch
+git -C Source/ultra-shared apply ../../patches/ultra-shared-udp-read.patch
 cmake -S . -B Builds/vs22 -G "Visual Studio 17 2022" -A x64 -DULTRA_MSVC=ON -DBUILD_EXTRAS=OFF -DBUILD_TESTING=OFF
 cmake --build Builds/vs22 --config Release --parallel
 python Tools/make_win_exe.py Builds/vs22/ultraView_artefacts/Release/ultraView.exe dist/ultraView.exe
@@ -128,5 +129,8 @@ python Tools/make_win_exe.py Builds/vs22/ultraView_artefacts/Release/ultraView.e
   develop changed `MessageBoxOptions::withButton`.
 - `patches/lime-msvc-regex.patch`: MSVC's `<regex>` has no `multiline`; the
   shader include search uses an equivalent pattern there.
+- `patches/ultra-shared-udp-read.patch`: the stream receivers read one datagram
+  without blocking and stop with a bounded wait (see "Stream start"). After
+  updating the `Source/ultra-shared` submodule, apply it again.
 - `Tools/make_win_exe.py` appends Data.pak to the exe (what `ci/build.sh` does
   with 7z).

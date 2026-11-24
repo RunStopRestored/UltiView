@@ -13,11 +13,15 @@ build it on this PC: `README-C64-KEYBOARD.md`.
   repo is the backup).
 - `modules/lime` shows as modified: `patches/lime-msvc-regex.patch` is applied there for
   the MSVC build. Expected; do not commit or reset it.
+- `Source/ultra-shared` shows as modified: `patches/ultra-shared-udp-read.patch` is applied
+  there (the stream-receiver hang fix). Same rule. A change to that submodule's code goes
+  into the patch file (`git -C Source/ultra-shared diff > patches/ultra-shared-udp-read.patch`).
 
 ## Build (Windows, MSVC, no clang-cl, no 7-Zip)
 
-Steps in `README-C64-KEYBOARD.md`: `ULTRA_MSVC=ON`, JUCE pinned to b7baf331, the lime
-patch, then `Tools/make_win_exe.py` makes `dist/ultraView.exe`.
+Steps in `README-C64-KEYBOARD.md`: `ULTRA_MSVC=ON`, JUCE pinned to b7baf331, the lime and
+ultra-shared patches, then `Tools/make_win_exe.py` makes `dist/ultraView.exe`. A new source
+file needs the CMake configure step again (the source glob runs at configure time).
 
 ## The keyboard
 
