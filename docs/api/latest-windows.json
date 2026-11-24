@@ -1,7 +1,7 @@
 {
-  "version": "1.5.0",
-  "url": "https://github.com/RunStopRestored/UltiView/releases/download/v1.5.0/UltiView.exe",
-  "sha256": "13333572051ae35303252df3e2351c801e262cfac1f8988638f5d53fd54531bb",
-  "bytes": 16690360,
-  "notes": "https://github.com/RunStopRestored/UltiView/releases/tag/v1.5.0"
+  "version": "1.5.1",
+  "url": "https://github.com/RunStopRestored/UltiView/releases/download/v1.5.1/UltiView.exe",
+  "sha256": "7e89029df3203a1ea1d2a634a79462982e9e79a68acb84e9ebe1bffcbd726bd4",
+  "bytes": 16690872,
+  "notes": "https://github.com/RunStopRestored/UltiView/releases/tag/v1.5.1"
 }
