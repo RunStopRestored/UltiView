@@ -66,9 +66,16 @@ void GUI_ultraView::prepareToPlay ( int samplesPerBlockExpected, double sampleRa
 	streamBuffer.setSize ( 2, int ( streamBufferSize * 1.5 ) );
 
 	// The receiver only pushes whole packets, so tiny device blocks must not
-	// shrink the FIFO below packet granularity
-	streamFifo.setSize ( 2, std::max ( streamBufferSize * 4, c64uBuffer.getNumSamples () * 4 ) );
+	// shrink the FIFO below packet granularity. Room for the drift target
+	// plus network jitter on top of it
+	streamFifo.setSize ( 2, std::max ( streamBufferSize * 8, c64uBuffer.getNumSamples () * 24 ) );
 	streamResamplingFifo.setResamplingRatio ( internalSamplerate, sampleRate_ );
+
+	// Two reads' worth in reserve absorbs the packets' bursty arrival
+	streamTargetFill = streamBuffer.getNumSamples () * 2;
+	streamNominalRatio = sampleRate_ / internalSamplerate;
+	streamSmoothedFill = streamTargetFill;
+	streamBuffering = true;
 }
 //-----------------------------------------------------------------------------
 
@@ -95,31 +102,49 @@ void GUI_ultraView::getNextAudioBlock ( const juce::AudioSourceChannelInfo& buff
 	// Fill output buffer
 	//
 	{
-		if ( sampleRate == internalSamplerate )
-		{
-			streamFifo.read ( *bufferToFill.buffer );
-		}
-		else
-		{
-			const auto	numSamples = bufferToFill.buffer->getNumSamples ();
-			while ( streamResamplingFifo.samplesReady () < numSamples )
-			{
-				if ( streamFifo.getNumReady () < streamBuffer.getNumSamples () )
-				{
-					bufferToFill.clearActiveBufferRegion ();
-					inAudio.exit ();
-					return;
-				}
+		// Always through the resampler, also at 48 kHz: the stream's clock is
+		// not the device's (see streamNominalRatio in the header)
+		const auto	numSamples = bufferToFill.buffer->getNumSamples ();
+		const auto	fill = streamFifo.getNumReady ();
 
-				streamFifo.read ( streamBuffer );
-				streamResamplingFifo.pushAudioBuffer ( streamBuffer );
+		// Dry (startup, a dropout): silence until the reserve is back
+		if ( streamBuffering )
+		{
+			if ( fill < streamTargetFill )
+			{
+				bufferToFill.clearActiveBufferRegion ();
+				inAudio.exit ();
+				return;
 			}
 
-			streamResamplingFifo.popAudioBuffer ( *bufferToFill.buffer );
-
-			//const auto	mag = bufferToFill.buffer->getMagnitude ( 0, numSamples );
-			//Z_INFO ( "Stream audio magnitude: " << mag );
+			streamBuffering = false;
+			streamSmoothedFill = fill;
 		}
+
+		// Hold the fill at the target: a FIFO running low consumes slower
+		// (more output per input), a filling one faster. Smoothed over about
+		// a second of callbacks; the correction stays far below audible pitch
+		streamSmoothedFill += ( fill - streamSmoothedFill ) * 0.01;
+
+		const auto	error = std::clamp ( ( streamTargetFill - streamSmoothedFill ) / double ( streamTargetFill ), -1.0, 1.0 );
+		streamResamplingFifo.setRatio ( float ( streamNominalRatio * ( 1.0 + maxDriftCorrection * error ) ) );
+
+		while ( streamResamplingFifo.samplesReady () < numSamples )
+		{
+			if ( streamFifo.getNumReady () < streamBuffer.getNumSamples () )
+			{
+				// Ran dry: refill before playing on
+				streamBuffering = true;
+				bufferToFill.clearActiveBufferRegion ();
+				inAudio.exit ();
+				return;
+			}
+
+			streamFifo.read ( streamBuffer );
+			streamResamplingFifo.pushAudioBuffer ( streamBuffer );
+		}
+
+		streamResamplingFifo.popAudioBuffer ( *bufferToFill.buffer );
 	}
 
 	//

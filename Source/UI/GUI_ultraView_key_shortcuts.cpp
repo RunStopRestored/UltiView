@@ -85,19 +85,78 @@ bool GUI_ultraView::keyPressed ( const juce::KeyPress& key )
 }
 //-----------------------------------------------------------------------------
 
+bool GUI_ultraView::canSendC64Keys () const
+{
+	return c64Keys && ! aboutScreen.isVisible () && ! shortcutsScreen.isVisible ();
+}
+//-----------------------------------------------------------------------------
+
 bool GUI_ultraView::sendC64Key ( const juce::KeyPress& key )
 {
-	if ( ! c64Keys || aboutScreen.isVisible () || shortcutsScreen.isVisible () )
+	if ( ! canSendC64Keys () )
 		return false;
 
-	const auto	petscii = C64Keyboard::petsciiFor ( key );
+	// Alt shortcuts (Alt+Enter) and Alt+F4 stay ultraView's / Windows'
+	if ( key.getModifiers ().isAltDown () )
+	{
+		if ( key.isKeyCode ( juce::KeyPress::F4Key ) || shortcuts->find ( key ).isNotEmpty () )
+			return false;
 
-	if ( petscii < 0 )
+		altAlone = false;		// C= was used with a key
+	}
+
+	const auto	stroke = C64Keyboard::strokeFor ( key );
+
+	if ( stroke.isEmpty () )
 		return false;
 
-	c64Keyboard.send ( petscii, settings->get<juce::String> ( "network/last-ip" ).trim (),
-					   settings->get<juce::String> ( "network/password" ) );
+	sendC64Stroke ( stroke );
 	return true;
+}
+//-----------------------------------------------------------------------------
+
+void GUI_ultraView::sendC64Stroke ( const C64Keyboard::Stroke& stroke )
+{
+	c64Keyboard.send ( stroke, settings->get<juce::String> ( "network/last-ip" ).trim (),
+					   settings->get<juce::String> ( "network/password" ) );
+}
+//-----------------------------------------------------------------------------
+
+void GUI_ultraView::modifierKeysChanged ( const juce::ModifierKeys& mods )
+{
+	// Alt as the Commodore key (AltGr comes as Ctrl+Alt: not C=)
+	const auto	alt = mods.isAltDown () && ! mods.isCtrlDown () && ! mods.isCommandDown ();
+
+	// Not while typing into one of ultraView's own text fields
+	const auto	typing = dynamic_cast<juce::TextEditor*> ( getCurrentlyFocusedComponent () ) != nullptr;
+	const auto	active = canSendC64Keys () && ! typing;
+
+	if ( alt && ! altHeld )
+	{
+		altHeld = true;
+		altAlone = active;
+		altShiftSent = false;
+	}
+
+	if ( altHeld && alt && mods.isShiftDown () && ! altShiftSent && active )
+	{
+		sendC64Stroke ( C64Keyboard::commodoreStroke ( true ) );
+		altShiftSent = true;
+		altAlone = false;
+	}
+
+	if ( altHeld && ! alt )
+	{
+		altHeld = false;
+
+		// Ctrl joined in (an ultraView shortcut), or Alt really went up
+		if ( altAlone && active && ! mods.isCtrlDown () && ! mods.isCommandDown () )
+			sendC64Stroke ( C64Keyboard::commodoreStroke ( false ) );
+
+		altAlone = false;
+	}
+
+	juce::Component::modifierKeysChanged ( mods );
 }
 //-----------------------------------------------------------------------------
 

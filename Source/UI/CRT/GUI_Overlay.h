@@ -34,8 +34,8 @@ public:
 	bool isStreamStalled () const { return c64uReceiver.isStalled (); }
 
 	// Paused: the video port is closed for other listeners, the last frame
-	// stays on screen under a banner
-	void setStreamPaused ( bool paused );
+	// stays on screen under a banner (its text when given, else "paused")
+	void setStreamPaused ( bool paused, const juce::String& bannerText = {} );
 
 	// Browser for the C64u's SD / USB storage
 	void toggleC64Files () { c64Files.isOpen () ? c64Files.close () : c64Files.open (); }
@@ -61,6 +61,8 @@ private:
 	{
 		PausedBanner () : juce::Component ( "stream-paused" ) { setInterceptsMouseClicks ( false, false ); }
 		void paint ( juce::Graphics& g ) override;
+
+		juce::String	text;
 	};
 	PausedBanner	pausedBanner;
 

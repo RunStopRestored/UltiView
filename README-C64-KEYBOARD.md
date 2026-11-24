@@ -5,8 +5,21 @@ A private build of [ultraView](https://github.com/Toddler-Boy/ultraView) 1.4.4
 
 ## Keyboard
 
-Typed keys go into the C64's KERNAL keyboard buffer ($0277, count $C6) through
-the C64u REST API (`Source/Remote/C64Keyboard.cpp`). For each key it waits until
+Typed keys go to the C64 through the C64u REST API
+(`Source/Remote/C64Keyboard.cpp`), one of two ways, chosen per C64u.
+
+**Keyboard matrix** (newer firmware, e.g. C64U 1.2.1). The first key asks
+`GET /v1/machine:input`: 200 means the firmware can press keys in the C64's
+keyboard matrix. Each PC key becomes the C64 keys that type it
+(`["left_shift", "a"]`), and the keys typed so far go in one
+`POST /v1/machine:input` as `tap` events (up to 64; the firmware plays them one
+after the other). Every program sees these keys, games that scan the matrix
+and the Ultimate's own menu included (it no longer closes on the first key).
+This JSON POST leaves no file in /Temp. If the route later answers 404 or 501,
+the next key asks again.
+
+**Keyboard buffer** (fallback, when `machine:input` answers 404). The keys go
+into the KERNAL keyboard buffer ($0277, count $C6). For each key it waits until
 the program has taken the previous one ($C6 = 0), then writes the key and the
 count with `PUT /v1/machine:writemem?address=..&data=..`. The bytes travel in the
 URL: a `POST` with a body leaves a file in the C64u's /Temp, and once /Temp is
@@ -27,9 +40,21 @@ which). Ctrl shortcuts, F11 and F12 stay ultraView's.
 | F1-F8 | F1-F8 |
 | Esc | RUN/STOP |
 | ` or _ | left arrow |
+| Alt + key | C= + that key (matrix only) |
+| Alt alone | C= (tapped when Alt goes up, if no key was typed with it) |
+| Alt + Shift | C= + SHIFT, the character set switch |
+| Page Up | RESTORE (matrix only) |
+| Alt + Page Up | C= + RESTORE: the Ultimate menu, through `PUT /v1/machine:menu_button` (firmware 1.2.1 takes an injected C= + RESTORE but does not open the menu for it) |
 
-Only programs that read the keyboard buffer see these keys (BASIC, the KERNAL,
-Ultimidi); programs that scan the keyboard matrix themselves do not.
+Alt is the Commodore key and Page Up is RESTORE, as in VICE. Neither has a
+PETSCII code, so with the keyboard buffer they do nothing. Alt+Enter
+(fullscreen) and Alt+F4 stay ultraView's. JUCE does not tell left Alt from
+right, so either Alt works; AltGr (Ctrl+Alt) is not C=.
+
+With the keyboard buffer, only programs that read the buffer see these keys
+(BASIC, the KERNAL, Ultimidi); programs that scan the keyboard matrix
+themselves do not. With the matrix, all of them do. The log (Shift+F11) says
+which way the C64u got.
 
 ## Stream pause
 
@@ -43,10 +68,33 @@ paused, the reconnect loop does not touch the streams.
 Ctrl+S again resumes: ultraView starts both streams again, aimed at this PC,
 taking them back from whoever has them.
 
+## Stream start
+
+Before every stream start (startup, reconnect, Retry) ultraView stops both
+streams on the C64U and pings it once, then starts them. A C64U stuck
+refusing streams to this PC ("Network Host Resolve Error", HTTP 404, after
+another computer had the stream) takes them again after a ping from it.
+A refused start is tried once more the same way; then the streams stay
+paused under a "STREAM NOT STARTED" banner and a dialog gives the C64U's
+reason, with Retry (Ctrl+S also retries) and Close.
+
+The UDP receivers read one datagram at a time without blocking (see
+`patches/ultra-shared-udp-read.patch`): a blocking read waited for a full
+packet's worth of bytes, so a short datagram with nothing after it froze the
+receiver thread, and with it the reconnect and the app's shutdown.
+
+## Stream audio
+
+The C64U streams a little under 48 kHz by its own clock (PAL about 47983 Hz,
+NTSC about 47940 Hz). ultraView resamples the stream, also at 48 kHz, and
+nudges the ratio (at most 0.5 %) to hold its buffer at about two reads' worth;
+before, the buffer ran dry every few seconds and each time clicked. A buffer
+that does run dry plays silence until it is refilled.
+
 ## C64U files (Ctrl+O)
 
-The Ultimate's own menu closes on the first key that comes over the network, so
-ultraView has its own browser for the C64U's storage (SD, USB0, Flash, Temp).
+With older firmware the Ultimate's own menu closes on the first key that comes
+over the network (the keyboard buffer way), so ultraView has its own browser for the C64U's storage (SD, USB0, Flash, Temp).
 It lists folders over the C64U's FTP server (the REST API has no listing) and
 runs files with the REST runners, straight from the card, without uploading.
 

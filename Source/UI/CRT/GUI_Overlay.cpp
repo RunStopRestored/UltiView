@@ -140,8 +140,11 @@ void GUI_Overlay::setStreamAddress ( const juce::String& address )
 }
 //-----------------------------------------------------------------------------
 
-void GUI_Overlay::setStreamPaused ( const bool paused )
+void GUI_Overlay::setStreamPaused ( const bool paused, const juce::String& bannerText )
 {
+	pausedBanner.text = bannerText.isNotEmpty () ? bannerText : juce::String ( "STREAM PAUSED  -  Ctrl+S resumes" );
+	pausedBanner.repaint ();
+
 	{
 		const juce::ScopedLock lock ( streamLock );
 
@@ -190,7 +193,7 @@ void GUI_Overlay::PausedBanner::paint ( juce::Graphics& g )
 	g.drawRoundedRectangle ( area, 8.0f, 2.0f );
 
 	g.setFont ( juce::FontOptions ( 18.0f, juce::Font::bold ) );
-	g.drawText ( "STREAM PAUSED  -  Ctrl+S resumes", getLocalBounds (), juce::Justification::centred );
+	g.drawFittedText ( text, getLocalBounds ().reduced ( 8, 0 ), juce::Justification::centred, 1 );
 }
 //-----------------------------------------------------------------------------
 

@@ -183,6 +183,17 @@ private:
 	gin::ResamplingFifo			streamResamplingFifo { 1024 * 5 };
 	C64u_UDP_Receiver			c64uReceiver { C64u_UDP_Receiver::streamType::audio };
 
+	// Clock drift: the C64u sends a little under 48 kHz (PAL ~47983 Hz, NTSC
+	// ~47940 Hz) by its own clock, the device plays by another. The stream
+	// always goes through the resampler, its ratio nudged (at most
+	// maxDriftCorrection) to hold the FIFO at streamTargetFill; a dry FIFO
+	// waits to refill (streamBuffering) instead of clicking every block
+	static constexpr double	maxDriftCorrection = 0.005;
+	double					streamNominalRatio = 1.0;
+	double					streamSmoothedFill = 0.0;
+	int						streamTargetFill = 0;
+	bool					streamBuffering = true;
+
 	// AsyncNetwork
 	AsyncNetwork				network;
 
@@ -208,11 +219,19 @@ private:
 	// The last pause/resume this app sent, for the pause toggle key
 	bool	machinePaused = false;
 
-	// Remote keyboard: typed keys go to the C64's keyboard buffer while on
-	// (Ctrl+K toggles); Ctrl combinations, F11 and F12 stay ultraView's
+	// Remote keyboard: typed keys go to the C64 while on (Ctrl+K toggles);
+	// Ctrl combinations, F11, F12 and the Alt shortcuts stay ultraView's.
+	// Alt is the Commodore key: alone it taps C= when let go, with Shift it
+	// taps C=+SHIFT (the character set switch)
 	C64Keyboard	c64Keyboard;
 	bool		c64Keys = true;
+	bool		altHeld = false;
+	bool		altAlone = false;
+	bool		altShiftSent = false;
+	bool canSendC64Keys () const;
 	bool sendC64Key ( const juce::KeyPress& key );
+	void sendC64Stroke ( const C64Keyboard::Stroke& stroke );
+	void modifierKeysChanged ( const juce::ModifierKeys& mods ) override;
 	void showC64KeysState ();
 
 	// Stream pause (Ctrl+S): stops the C64u's streams and closes both UDP
@@ -220,6 +239,16 @@ private:
 	// reconnect loop leaves the streams alone until resumed
 	std::atomic<bool>	streamsPaused = false;
 	void toggleStreamPause ();
+	void pauseStreams ( const juce::String& bannerText, const juce::String& titleStatus );
+
+	// The C64u refused to start a stream (another machine may hold it): the
+	// streams stay paused instead of retrying every tick, a dialog says why
+	// and offers Retry (Ctrl+S does the same) or Close
+	void streamStartFailed ( const juce::String& error );
+
+	// Stops both streams, pings the C64u, starts both; a refused start runs
+	// it all again retriesLeft times, then streamStartFailed. Any thread
+	void startStreams ( const juce::String& videoAddress, const juce::String& audioAddress, int retriesLeft );
 
 	juce::SharedResourcePointer<GUI_TooltipWindow>	tooltipWindow;
 	bool	showRasterTime = false;

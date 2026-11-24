@@ -1,6 +1,7 @@
 #include "GUI_ultraView.h"
 
 #include "Globals/constants.h"
+#include "Remote/C64Ping.h"
 #include "ultra-shared/Helpers/PlatformHelper.h"
 
 //-----------------------------------------------------------------------------
@@ -65,32 +66,66 @@ void GUI_ultraView::timerCallback ()
 }
 //-----------------------------------------------------------------------------
 
+void GUI_ultraView::pauseStreams ( const juce::String& bannerText, const juce::String& titleStatus )
+{
+	streamsPaused = true;
+	healWatchdog.stopTimer ();
+
+	// Only stop what we started: a stream someone else already took over
+	// stays theirs
+	if ( streamsStarted.exchange ( false ) )
+	{
+		network.put ( "v1/streams/video:stop" );
+		network.put ( "v1/streams/audio:stop" );
+	}
+
+	mainScreen.crt.setStreamPaused ( true, bannerText );
+	c64uReceiver.stop ();
+	netReceiving = false;
+
+	juce::String	title;
+	{
+		const juce::ScopedLock	sl ( titleLock );
+		title = connectedTitle;
+	}
+	setTitleStatus ( title + " - " + titleStatus );
+}
+//-----------------------------------------------------------------------------
+
+void GUI_ultraView::streamStartFailed ( const juce::String& error )
+{
+	if ( streamsPaused )
+		return;
+
+	Z_ERR ( "The C64u did not start its stream: " << error );
+
+	pauseStreams ( "STREAM NOT STARTED  -  Ctrl+S retries", "stream not started" );
+
+	juce::NativeMessageBox::showAsync ( juce::MessageBoxOptions ()
+											.withIconType ( juce::MessageBoxIconType::WarningIcon )
+											.withTitle ( "Stream not started" )
+											.withMessage ( "The C64 Ultimate did not start its stream to this computer:\n\n"
+														   + error
+														   + "\n\nAnother computer may be streaming from it. Stop the stream there"
+															 " (or restart the C64 Ultimate), then retry.\n\n"
+															 "ultraView keeps running; Ctrl+S retries too." )
+											.withButton ( "Retry" )
+											.withButton ( "Close" )
+											.withAssociatedComponent ( this ),
+										[ safe = juce::Component::SafePointer<GUI_ultraView> ( this ) ] ( const int result )
+										{
+											// Retry: resume, which starts both streams again
+											if ( result == 0 && safe != nullptr && safe->streamsPaused )
+												safe->toggleStreamPause ();
+										} );
+}
+//-----------------------------------------------------------------------------
+
 void GUI_ultraView::toggleStreamPause ()
 {
 	if ( ! streamsPaused )
 	{
-		streamsPaused = true;
-		healWatchdog.stopTimer ();
-
-		// Only stop what we started: a stream someone else already took over
-		// stays theirs
-		if ( streamsStarted.exchange ( false ) )
-		{
-			network.put ( "v1/streams/video:stop" );
-			network.put ( "v1/streams/audio:stop" );
-		}
-
-		mainScreen.crt.setStreamPaused ( true );
-		c64uReceiver.stop ();
-		netReceiving = false;
-
-		juce::String	title;
-		{
-			const juce::ScopedLock	sl ( titleLock );
-			title = connectedTitle;
-		}
-		setTitleStatus ( title + " - stream paused" );
-
+		pauseStreams ( {}, "stream paused" );
 		Z_LOG ( "Streams paused, UDP ports released" );
 		return;
 	}
@@ -219,27 +254,7 @@ void GUI_ultraView::setupNetworking ()
 			audioAddress = retargetToOwnIP ( audioAddress, ownIP );
 		}
 
-		network.put ( "v1/streams/video:start", { "ip", videoAddress } );
-		network.put ( "v1/streams/audio:start", { "ip", audioAddress }, [ this, videoAddress, audioAddress ] ( const juce::var&, const int startCode )
-		{
-			streamsStarted = startCode >= 200 && startCode < 300;
-
-			juce::MessageManager::callAsync ( [ this, videoAddress, audioAddress ]
-			{
-				// Paused while the start was on its way: take it back
-				if ( streamsPaused && streamsStarted.exchange ( false ) )
-				{
-					network.put ( "v1/streams/video:stop" );
-					network.put ( "v1/streams/audio:stop" );
-				}
-
-				videoStreamTarget = videoAddress;
-				audioStreamTarget = audioAddress;
-
-				if ( ! streamsPaused )
-					healWatchdog.startTimer ( healWatchdogMs );
-			} );
-		} );
+		startStreams ( videoAddress, audioAddress, 1 );
 
 		mainScreen.crt.setStreamAddress ( videoAddress );
 
@@ -248,6 +263,94 @@ void GUI_ultraView::setupNetworking ()
 
 		c64uReceiver.stop ();
 		UI::sendGlobalMessage ( "stream-status audio {}", c64uReceiver.start ( audioAddress ).quoted () );
+	} );
+}
+//-----------------------------------------------------------------------------
+
+void GUI_ultraView::startStreams ( const juce::String& videoAddress, const juce::String& audioAddress, const int retriesLeft )
+{
+	const auto	c64uIP = settings->get<juce::String> ( "network/last-ip" ).trim ();
+
+	// A clean start: stop whatever the C64u still streams (another machine's
+	// stream, or one stuck), then ping it. A C64u stuck refusing streams to
+	// this machine ("Network Host Resolve Error") takes them again after a
+	// ping from it. The queue runs in order and a callback finishes before
+	// the next request, so the ping lands between the stops and the starts
+	network.put ( "v1/streams/video:stop" );
+	network.put ( "v1/streams/audio:stop", {}, [ c64uIP ] ( const juce::var&, const int )
+	{
+		if ( ! pingC64u ( c64uIP, 1000 ) )
+			Z_LOG ( "The C64u did not answer a ping" );
+	} );
+
+	// Both answers decide; the video answer is in before the audio callback
+	// reads it (same order rule)
+	auto	videoError = std::make_shared<juce::String> ();
+
+	// The C64u's own error text, else the HTTP status; empty on success
+	auto	startError = [] ( const juce::String& stream, const juce::var& reply, const int code ) -> juce::String
+	{
+		if ( code >= 200 && code < 300 )
+			return {};
+
+		if ( code == 0 )
+			return stream + ": no answer";
+
+		juce::String	text;
+		if ( auto* errors = reply[ "errors" ].getArray (); errors != nullptr && ! errors->isEmpty () )
+			text = errors->getFirst ().toString ();
+
+		return stream + ": " + ( text.isNotEmpty () ? text + " (HTTP " + juce::String ( code ) + ")" : "HTTP " + juce::String ( code ) );
+	};
+
+	network.put ( "v1/streams/video:start", { "ip", videoAddress }, [ videoError, startError ] ( const juce::var& reply, const int code )
+	{
+		*videoError = startError ( "Video", reply, code );
+	} );
+
+	network.put ( "v1/streams/audio:start", { "ip", audioAddress }, [ this, videoAddress, audioAddress, retriesLeft, videoError, startError ] ( const juce::var& reply, const int startCode )
+	{
+		const auto	audioError = startError ( "Audio", reply, startCode );
+
+		// Either one running is ours to stop again
+		streamsStarted = videoError->isEmpty () || audioError.isEmpty ();
+
+		juce::StringArray	errors;
+		errors.add ( *videoError );
+		errors.add ( audioError );
+		errors.removeEmptyStrings ();
+
+		const auto	error = errors.joinIntoString ( "\n" );
+
+		// Refused: once more (stop, ping, start) before telling the user
+		if ( error.isNotEmpty () && retriesLeft > 0 && ! streamsPaused )
+		{
+			Z_LOG ( "Stream start refused, retrying: " << error.replace ( "\n", "; " ) );
+			startStreams ( videoAddress, audioAddress, retriesLeft - 1 );
+			return;
+		}
+
+		juce::MessageManager::callAsync ( [ this, videoAddress, audioAddress, error ]
+		{
+			if ( error.isNotEmpty () )
+			{
+				streamStartFailed ( error );
+				return;
+			}
+
+			// Paused while the start was on its way: take it back
+			if ( streamsPaused && streamsStarted.exchange ( false ) )
+			{
+				network.put ( "v1/streams/video:stop" );
+				network.put ( "v1/streams/audio:stop" );
+			}
+
+			videoStreamTarget = videoAddress;
+			audioStreamTarget = audioAddress;
+
+			if ( ! streamsPaused )
+				healWatchdog.startTimer ( healWatchdogMs );
+		} );
 	} );
 }
 //-----------------------------------------------------------------------------

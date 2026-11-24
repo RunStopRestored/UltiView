@@ -70,6 +70,11 @@ public:
 
 	void shutdown () override
 	{
+		// No window when this was a second instance: JUCE quits it before
+		// initialise () and still calls shutdown ()
+		if ( mainWindow == nullptr )
+			return;
+
 		// The OpenGL teardown takes a third of a second, hide the window first.
 		// The peer, as setVisible () runs the context's detach before it hides
 		if ( auto peer = mainWindow->getPeer () )
@@ -87,6 +92,12 @@ public:
 
 	void anotherInstanceStarted ( const juce::String& /*commandLine*/ ) override
 	{
+		// Starting it again brings the running one forward
+		if ( mainWindow != nullptr )
+		{
+			mainWindow->setMinimised ( false );
+			mainWindow->toFront ( true );
+		}
 	}
 	//-----------------------------------------------------------------------------
 
