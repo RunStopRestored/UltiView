@@ -1,27 +1,34 @@
-# ultraView with a remote C64 keyboard
+# UltiView: ultraView with a remote C64 keyboard
 
-Private fork of ultraView 1.4.4 (GPL-3, upstream https://github.com/Toddler-Boy/ultraView)
+UltiView: a renamed fork of ultraView 1.4.4 (GPL-3, upstream https://github.com/Toddler-Boy/ultraView)
 that also sends keys to the C64 Ultimate while it streams. What the keyboard does and how to
 build it on this PC: `README-C64-KEYBOARD.md`.
 
 ## Repository
 
-- Remote `origin`: private https://github.com/RunStopRestored/ultraView; `upstream`: Toddler-Boy.
+- Remote `origin`: public https://github.com/RunStopRestored/UltiView (renamed from ultraView); `upstream`: Toddler-Boy.
 - Work on branch `c64-keyboard` (GitHub's default). `main` stays the untouched 1.4.4.
 - The git identity is set in this repo only (RunStopRestored); there is no global one.
 - Commit only when asked; after every commit, `git push` and check it worked (the GitHub
   repo is the backup).
 - `modules/lime` shows as modified: `patches/lime-msvc-regex.patch` is applied there for
   the MSVC build. Expected; do not commit or reset it.
-- `Source/ultra-shared` shows as modified: `patches/ultra-shared-udp-read.patch` is applied
+- `Source/ultra-shared` shows as modified: `patches/ultra-shared-ultiview.patch` is applied
   there (the stream-receiver hang fix). Same rule. A change to that submodule's code goes
-  into the patch file (`git -C Source/ultra-shared diff > patches/ultra-shared-udp-read.patch`).
+  into the patch file (`git -C Source/ultra-shared diff > patches/ultra-shared-ultiview.patch`).
 
 ## Build (Windows, MSVC, no clang-cl, no 7-Zip)
 
 Steps in `README-C64-KEYBOARD.md`: `ULTRA_MSVC=ON`, JUCE pinned to b7baf331, the lime and
-ultra-shared patches, then `Tools/make_win_exe.py` makes `dist/ultraView.exe`. A new source
-file needs the CMake configure step again (the source glob runs at configure time).
+ultra-shared patches, then `Tools/make_win_exe.py` makes `dist/UltiView.exe`. A new source
+file needs the CMake configure step again (the source glob runs at configure time). After a
+PRODUCT_NAME or COMPANY_NAME change, delete
+`Builds/vs22/ultraView_artefacts/JuceLibraryCode/ultraView_resources.rc`, or the exe keeps
+the old names in its version info (only a VERSION change evicts it).
+
+The program is UltiView (PRODUCT_NAME, exe, title, settings folder %APPDATA%\UltiView,
+copied once from %APPDATA%\ultraView); code names (GUI_ultraView, the CMake target,
+ultraView_artefacts) stay as upstream has them, so upstream merges stay simple.
 
 ## The keyboard
 
@@ -31,7 +38,7 @@ file needs the CMake configure step again (the source glob runs at configure tim
 back to the KERNAL keyboard buffer ($0277, count $C6) with
 `PUT /v1/machine:writemem?address=..&data=..`. Keep that one a PUT with the bytes in the
 URL: a writemem POST with a body leaves a file in the C64U's /Temp, and after about 330 of
-them every POST write fails. Ctrl+K switches the keyboard between the C64 and ultraView.
+them every POST write fails. Ctrl+K switches the keyboard between the C64 and UltiView.
 
 Related project: Ultimidi (../Ultimidi, beside this repo), the C64U MIDI player this
 keyboard is used with; it reads keys from the keyboard buffer.
@@ -40,4 +47,5 @@ keyboard is used with; it reads keys from the keyboard buffer.
 
 The updater reads this fork's `docs/api/latest-windows.json` (raw.githubusercontent,
 branch c64-keyboard), never upstream's. Fork versions start at 1.5.0 (`VERSION`). Release
-steps are in `README-C64-KEYBOARD.md` ("Updates"); upstream's workflow is disabled here.
+steps are in `README-C64-KEYBOARD.md` ("Updates"); GitHub Actions is turned off for this repo (upstream's
+workflow would run on release tags).

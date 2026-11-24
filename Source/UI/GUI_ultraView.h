@@ -169,10 +169,10 @@ private:
 	GUI_Shortcuts	shortcutsScreen;
 	GUI_FocusRing	focusRing;
 
-	// This fork's releases (RunStopRestored/ultraView, branch c64-keyboard),
-	// not upstream's: an upstream update would replace the fork with the
-	// official build. Raw files need no GitHub Pages site
-	AppUpdater		appUpdater { "https://raw.githubusercontent.com/RunStopRestored/ultraView/c64-keyboard/docs/api" };
+	// UltiView's releases (RunStopRestored/UltiView, branch c64-keyboard),
+	// not upstream ultraView's: an upstream update would replace the fork
+	// with the official build. Raw files need no GitHub Pages site
+	AppUpdater		appUpdater { "https://raw.githubusercontent.com/RunStopRestored/UltiView/c64-keyboard/docs/api" };
 
 	gin::FileSystemWatcher	folderWatcher;
 

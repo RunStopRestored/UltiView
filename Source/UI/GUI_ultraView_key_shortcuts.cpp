@@ -66,8 +66,8 @@ bool GUI_ultraView::keyPressed ( const juce::KeyPress& key )
 
 		// Toggle log-window
 		const lime::LoggerOptions opts {
-			.name = "ultraView",
-			.settingsFolder = "ultraView",
+			.name = ProjectInfo::projectName,
+			.settingsFolder = ProjectInfo::projectName,
 			.font = laf.monoFontWithHeight ( 16.0f ),
 		};
 

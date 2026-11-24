@@ -33,3 +33,18 @@ index e2fb3cf..5a3f194 100644
  
  			if ( bytesRead == packetSize )
  			{
+diff --git a/UI/GUI_About.cpp b/UI/GUI_About.cpp
+index 2923cc8..a4709cd 100644
+--- a/UI/GUI_About.cpp
++++ b/UI/GUI_About.cpp
+@@ -16,7 +16,9 @@ GUI_About::GUI_About ()
+ 
+ 	// URL
+ 	{
+-		const auto	url = "https://github.com/Toddler-Boy/" + juce::String ( ProjectInfo::projectName );
++		// UltiView (RunStopRestored's fork of ultraView): its own repository;
++		// the About text credits and links the original
++		const auto	url = juce::String ( "https://github.com/RunStopRestored/UltiView" );
+ 
+ 		link.setButtonText ( url );
+ 		link.setURL ( juce::URL ( url ) );

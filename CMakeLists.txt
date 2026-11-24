@@ -184,15 +184,15 @@ endforeach()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 juce_add_gui_app (ultraView
-				  PRODUCT_NAME ultraView
+				  PRODUCT_NAME UltiView
 				  CAMERA_PERMISSION_ENABLED YES
 				  CAMERA_PERMISSION_TEXT "User reflection"
 				  VERSION "${ultraView_VERSION}"
-  				  COMPANY_NAME "Michael Hartmann"
-				  COMPANY_WEBSITE "https://ultrasid.com/"
+  				  COMPANY_NAME "RunStopRestored"
+				  COMPANY_WEBSITE "https://github.com/RunStopRestored/UltiView"
 				  ICON_BIG "${icon_path_big}"
 				  ICON_SMALL "${icon_path_small}"
-				  BUNDLE_ID com.toddlerboy.ultraview)
+				  BUNDLE_ID com.runstoprestored.ultiview)
 
 # JUCE's version-resource command only runs when the rc is missing (its only
 # declared dependency is the icon), so a VERSION bump in an existing tree
@@ -292,7 +292,7 @@ target_compile_definitions (ultraView PRIVATE
 if (APPLE)
 	set_target_properties(ultraView PROPERTIES
 		XCODE_ATTRIBUTE_INFOPLIST_KEY_NSCameraUsageDescription "Add users reflection to CRT screen"
-		XCODE_ATTRIBUTE_INFOPLIST_KEY_NSLocalNetworkUsageDescription "ultraView receives the video and audio stream from your C64 Ultimate over the local network"
+		XCODE_ATTRIBUTE_INFOPLIST_KEY_NSLocalNetworkUsageDescription "UltiView receives the video and audio stream from your C64 Ultimate over the local network"
 		XCODE_ATTRIBUTE_CLANG_LINK_OBJC_RUNTIME OFF
 		XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING[variant=Release] ON
 		XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH[variant=Debug] ON

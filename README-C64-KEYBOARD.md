@@ -1,4 +1,4 @@
-# ultraView with a remote C64 keyboard
+# UltiView: ultraView with a remote C64 keyboard
 
 A modified fork of [ultraView](https://github.com/Toddler-Boy/ultraView) 1.4.4
 (GPL-3, changed since November 2026) that also sends keys to the C64 while it
@@ -7,13 +7,14 @@ streams. Fork versions start at 1.5.0.
 ## Updates
 
 The version badge checks this fork's releases, not upstream's:
-`https://raw.githubusercontent.com/RunStopRestored/ultraView/c64-keyboard/docs/api/latest-windows.json`
+`https://raw.githubusercontent.com/RunStopRestored/UltiView/c64-keyboard/docs/api/latest-windows.json`
 (version, download url, sha256, bytes, notes). To publish a release: raise
-`VERSION`, build `dist/ultraView.exe`, create the GitHub release `v<version>`
+`VERSION`, build `dist/UltiView.exe`, create the GitHub release `v<version>`
 with that exe attached, then write `docs/api/latest-windows.json` with the
 exe's sha256 and size, commit and push. The release asset must be exactly the
-file the manifest's sha256 was taken from. Upstream's release workflow
-(`.github/workflows/build.yaml`) is disabled in this fork.
+file the manifest's sha256 was taken from. GitHub Actions is turned off for
+this repo, so upstream's release workflow (`.github/workflows/build.yaml`)
+does not run on the release tags.
 
 ## Keyboard
 
@@ -38,8 +39,8 @@ URL: a `POST` with a body leaves a file in the C64u's /Temp, and once /Temp is
 full (about 330 files) every POST write fails ("Could not read data from
 attachment").
 
-Ctrl+K switches the keyboard between the C64 and ultraView (the title says
-which). Ctrl shortcuts, F11 and F12 stay ultraView's.
+Ctrl+K switches the keyboard between the C64 and UltiView (the title says
+which). Ctrl shortcuts, F11 and F12 stay UltiView's.
 
 | PC | C64 |
 |---|---|
@@ -60,7 +61,7 @@ which). Ctrl shortcuts, F11 and F12 stay ultraView's.
 
 Alt is the Commodore key and Page Up is RESTORE, as in VICE. Neither has a
 PETSCII code, so with the keyboard buffer they do nothing. Alt+Enter
-(fullscreen) and Alt+F4 stay ultraView's. JUCE does not tell left Alt from
+(fullscreen) and Alt+F4 stay UltiView's. JUCE does not tell left Alt from
 right, so either Alt works; AltGr (Ctrl+Alt) is not C=.
 
 With the keyboard buffer, only programs that read the buffer see these keys
@@ -71,18 +72,18 @@ which way the C64u got.
 ## Stream pause
 
 Ctrl+S pauses the stream so another program on this PC (Claude's C64u capture
-tools, for example) can use it without quitting ultraView. ultraView sends
+tools, for example) can use it without quitting UltiView. UltiView sends
 `PUT /v1/streams/video:stop` and `audio:stop` (only if it started them) and
 closes its UDP ports (11000 video, 11001 audio). The last frame stays on screen
 under a "STREAM PAUSED" banner, and the title shows "stream paused". While
 paused, the reconnect loop does not touch the streams.
 
-Ctrl+S again resumes: ultraView starts both streams again, aimed at this PC,
+Ctrl+S again resumes: UltiView starts both streams again, aimed at this PC,
 taking them back from whoever has them.
 
 ## Stream start
 
-Before every stream start (startup, reconnect, Retry) ultraView stops both
+Before every stream start (startup, reconnect, Retry) UltiView stops both
 streams on the C64U and pings it once, then starts them. A C64U stuck
 refusing streams to this PC ("Network Host Resolve Error", HTTP 404, after
 another computer had the stream) takes them again after a ping from it.
@@ -91,14 +92,14 @@ paused under a "STREAM NOT STARTED" banner and a dialog gives the C64U's
 reason, with Retry (Ctrl+S also retries) and Close.
 
 The UDP receivers read one datagram at a time without blocking (see
-`patches/ultra-shared-udp-read.patch`): a blocking read waited for a full
+`patches/ultra-shared-ultiview.patch`): a blocking read waited for a full
 packet's worth of bytes, so a short datagram with nothing after it froze the
 receiver thread, and with it the reconnect and the app's shutdown.
 
 ## Stream audio
 
 The C64U streams a little under 48 kHz by its own clock (PAL about 47983 Hz,
-NTSC about 47940 Hz). ultraView resamples the stream, also at 48 kHz, and
+NTSC about 47940 Hz). UltiView resamples the stream, also at 48 kHz, and
 nudges the ratio (at most 0.5 %) to hold its buffer at about two reads' worth;
 before, the buffer ran dry every few seconds and each time clicked. A buffer
 that does run dry plays silence until it is refilled.
@@ -106,7 +107,7 @@ that does run dry plays silence until it is refilled.
 ## C64U files (Ctrl+O)
 
 With older firmware the Ultimate's own menu closes on the first key that comes
-over the network (the keyboard buffer way), so ultraView has its own browser for the C64U's storage (SD, USB0, Flash, Temp).
+over the network (the keyboard buffer way), so UltiView has its own browser for the C64U's storage (SD, USB0, Flash, Temp).
 It lists folders over the C64U's FTP server (the REST API has no listing) and
 runs files with the REST runners, straight from the card, without uploading.
 
@@ -130,10 +131,10 @@ machine first, since a cartridge survives a reset.
 ```
 git submodule update --init --recursive
 git -C modules/lime apply ../../patches/lime-msvc-regex.patch
-git -C Source/ultra-shared apply ../../patches/ultra-shared-udp-read.patch
+git -C Source/ultra-shared apply ../../patches/ultra-shared-ultiview.patch
 cmake -S . -B Builds/vs22 -G "Visual Studio 17 2022" -A x64 -DULTRA_MSVC=ON -DBUILD_EXTRAS=OFF -DBUILD_TESTING=OFF
 cmake --build Builds/vs22 --config Release --parallel
-python Tools/make_win_exe.py Builds/vs22/ultraView_artefacts/Release/ultraView.exe dist/ultraView.exe
+python Tools/make_win_exe.py Builds/vs22/ultraView_artefacts/Release/UltiView.exe dist/UltiView.exe
 ```
 
 - `ULTRA_MSVC=ON` builds with MSVC instead of the ClangCL toolset.
@@ -141,7 +142,7 @@ python Tools/make_win_exe.py Builds/vs22/ultraView_artefacts/Release/ultraView.e
   develop changed `MessageBoxOptions::withButton`.
 - `patches/lime-msvc-regex.patch`: MSVC's `<regex>` has no `multiline`; the
   shader include search uses an equivalent pattern there.
-- `patches/ultra-shared-udp-read.patch`: the stream receivers read one datagram
+- `patches/ultra-shared-ultiview.patch`: the stream receivers read one datagram
   without blocking and stop with a bounded wait (see "Stream start"). After
   updating the `Source/ultra-shared` submodule, apply it again.
 - `Tools/make_win_exe.py` appends Data.pak to the exe (what `ci/build.sh` does

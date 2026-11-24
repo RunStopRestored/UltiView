@@ -19,6 +19,18 @@ class ultraViewApp : public juce::JUCEApplication
 public:
 	ultraViewApp ()
 	{
+		// This fork was renamed from ultraView: the first start under the new
+		// name copies the old settings folder over (IP, password, folders),
+		// before anything opens a file in it. The old folder stays as it was
+		{
+			const auto	appData = juce::File::getSpecialLocation ( juce::File::userApplicationDataDirectory );
+			const auto	current = appData.getChildFile ( ProjectInfo::projectName );
+			const auto	previous = appData.getChildFile ( "ultraView" );
+
+			if ( ! current.exists () && previous.isDirectory () && current != previous )
+				previous.copyDirectoryTo ( current );
+		}
+
 		juce::Logger::setCurrentLogger ( lime::Logger::getInstance () );
 
 		const auto	logFile = juce::File::getSpecialLocation ( juce::File::userApplicationDataDirectory )
@@ -59,8 +71,8 @@ public:
 				mainWindow->setVisible ( false );
 
 				juce::NativeMessageBox::showMessageBoxAsync ( juce::MessageBoxIconType::WarningIcon,
-					"ultraView is damaged",
-					"The ultraView program file is corrupted. Please download and install it again.",
+					"UltiView is damaged",
+					"The UltiView program file is corrupted. Please download and install it again.",
 					nullptr,
 					juce::ModalCallbackFunction::create ( [] ( int ) { juce::JUCEApplication::quit (); } ) );
 			} );

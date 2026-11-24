@@ -15,11 +15,11 @@ __attribute__ (( constructor ( 101 ) )) static void checkCpuBaseline ()
 	if ( __builtin_cpu_supports ( "sse4.2" ) )
 		return;
 
-	const std::string	message = "ultraView needs a CPU with SSE 4.2 (Intel Nehalem, AMD Bulldozer or newer).";
+	const std::string	message = "UltiView needs a CPU with SSE 4.2 (Intel Nehalem, AMD Bulldozer or newer).";
 
 	std::fprintf ( stderr, "%s\n", message.c_str () );
 
-	if ( std::system ( ( "zenity --error --title=ultraView --text=\"" + message + "\" 2>/dev/null" ).c_str () ) != 0 )
+	if ( std::system ( ( "zenity --error --title=UltiView --text=\"" + message + "\" 2>/dev/null" ).c_str () ) != 0 )
 		std::system ( ( "xmessage -center \"" + message + "\" 2>/dev/null" ).c_str () );
 
 	std::_Exit ( 1 );
