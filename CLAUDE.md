@@ -47,6 +47,7 @@ keyboard is used with; it reads keys from the keyboard buffer.
 
 The updater reads this fork's `docs/api/latest-windows.json` (raw.githubusercontent,
 branch c64-keyboard), never upstream's. Fork versions start at 1.5.0 (`VERSION`). Release
-steps are in `README-C64-KEYBOARD.md` ("Updates"); Actions is on (GitHub Pages needs it) but upstream's
-"Build" workflow is disabled: it would run on release tags. The web page is GitHub Pages from
+steps are in `README-C64-KEYBOARD.md` ("Updates"); Actions is on (GitHub Pages needs it); upstream's
+`.github/workflows/build.yaml` is deleted here (it would run on release tags). An upstream
+merge that brings it back: delete it again. The web page is GitHub Pages from
 `docs/` (https://runstoprestored.github.io/UltiView/).

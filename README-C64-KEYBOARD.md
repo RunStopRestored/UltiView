@@ -13,9 +13,10 @@ The version badge checks this fork's releases, not upstream's:
 with that exe attached, then write `docs/api/latest-windows.json` with the
 exe's sha256 and size, commit and push. The release asset must be exactly the
 file the manifest's sha256 was taken from. Upstream's release workflow
-(`.github/workflows/build.yaml`, "Build") is disabled in this repo's Actions,
-so it does not run on the release tags; keep it disabled. Actions itself stays
-on: GitHub Pages builds the web page with it.
+(`.github/workflows/build.yaml`) is deleted on this branch: it would run on
+the release tags and publish upstream-style releases and manifests. If an
+upstream merge brings it back, delete it again. Actions itself stays on:
+GitHub Pages builds the web page with it.
 
 The web page, https://runstoprestored.github.io/UltiView/, is GitHub Pages
 from `docs/` on branch c64-keyboard. Its download button reads
