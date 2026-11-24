@@ -33,5 +33,11 @@ back to the KERNAL keyboard buffer ($0277, count $C6) with
 URL: a writemem POST with a body leaves a file in the C64U's /Temp, and after about 330 of
 them every POST write fails. Ctrl+K switches the keyboard between the C64 and ultraView.
 
-Related project: Ultimidi (C:\Users\palad\Documents\Claude\Ultimidi), the C64U MIDI player
-this keyboard is used with; it reads keys from the keyboard buffer.
+Related project: Ultimidi (../Ultimidi, beside this repo), the C64U MIDI player this
+keyboard is used with; it reads keys from the keyboard buffer.
+
+## Releases and updates
+
+The updater reads this fork's `docs/api/latest-windows.json` (raw.githubusercontent,
+branch c64-keyboard), never upstream's. Fork versions start at 1.5.0 (`VERSION`). Release
+steps are in `README-C64-KEYBOARD.md` ("Updates"); upstream's workflow is disabled here.

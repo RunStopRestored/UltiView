@@ -1,6 +1,14 @@
 <h1><img align="top" src="icons/macos15_big.png" height="45" /> ultraView</h1>
 Open source C64 ultimate stream viewer deluxe.
 
+> **This is a modified fork** (RunStopRestored/ultraView, branch `c64-keyboard`,
+> changed since November 2026) of [ultraView](https://github.com/Toddler-Boy/ultraView)
+> by Toddler-Boy, under the same GPL-3 license. It adds a remote C64 keyboard, a
+> C64U file browser, stream pause and stream fixes: see
+> [README-C64-KEYBOARD.md](README-C64-KEYBOARD.md). Its updates come from this
+> fork's releases. It is not the official ultraView; report its problems here,
+> not upstream.
+
 ## Features
 
 - Best in class CRT simulation for both PAL and NTSC.

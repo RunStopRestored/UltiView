@@ -1,7 +1,19 @@
 # ultraView with a remote C64 keyboard
 
-A private build of [ultraView](https://github.com/Toddler-Boy/ultraView) 1.4.4
-(GPL-3) that also sends keys to the C64 while it streams.
+A modified fork of [ultraView](https://github.com/Toddler-Boy/ultraView) 1.4.4
+(GPL-3, changed since November 2026) that also sends keys to the C64 while it
+streams. Fork versions start at 1.5.0.
+
+## Updates
+
+The version badge checks this fork's releases, not upstream's:
+`https://raw.githubusercontent.com/RunStopRestored/ultraView/c64-keyboard/docs/api/latest-windows.json`
+(version, download url, sha256, bytes, notes). To publish a release: raise
+`VERSION`, build `dist/ultraView.exe`, create the GitHub release `v<version>`
+with that exe attached, then write `docs/api/latest-windows.json` with the
+exe's sha256 and size, commit and push. The release asset must be exactly the
+file the manifest's sha256 was taken from. Upstream's release workflow
+(`.github/workflows/build.yaml`) is disabled in this fork.
 
 ## Keyboard
 
