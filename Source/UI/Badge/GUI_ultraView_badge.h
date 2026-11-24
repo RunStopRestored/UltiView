@@ -15,7 +15,7 @@ public:
 	GUI_VersionPill		version;
 
 private:
-	GUI_ultraView_logo	logoUltraView { "logo", "logos/ultraview" };
+	GUI_ultraView_logo	logoUltraView { "logo", "text:UltiView" };
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR ( GUI_ultraView_Badge )
 };

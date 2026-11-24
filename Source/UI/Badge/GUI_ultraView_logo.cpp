@@ -13,10 +13,48 @@ GUI_ultraView_logo::GUI_ultraView_logo ( const juce::String& name, const juce::S
 {
 	setMouseCursor ( juce::MouseCursor::PointingHandCursor );
 
+	if ( resource.startsWith ( "text:" ) )
+	{
+		buildTextLogo ( resource.fromFirstOccurrenceOf ( "text:", false, false ) );
+		return;
+	}
+
 	auto	[ logo, _ ] = UI::getSVG ( resource );
 
 	if ( logo )
 		collectPaths ( *logo, {} );
+}
+//-----------------------------------------------------------------------------
+
+void GUI_ultraView_logo::buildTextLogo ( const juce::String& text )
+{
+	// The SVG logo's look from the app font (Figtree, OFL): black-weight
+	// letters in the fill role over a thick rounded outline, which also drops
+	// a little below them like the original's shadow edge
+	constexpr auto	height = 100.0f;
+
+	juce::GlyphArrangement	glyphs;
+	glyphs.addLineOfText ( UI::font ( height, 900 ), text, 0.0f, 0.0f );
+
+	juce::Path	letters;
+	glyphs.createPath ( letters );
+
+	const auto	strokeWidth = height * 0.16f;
+
+	juce::Path	outline;
+	juce::PathStrokeType ( strokeWidth, juce::PathStrokeType::curved, juce::PathStrokeType::rounded ).createStrokedPath ( outline, letters );
+	outline.addPath ( letters );
+
+	// The drop: the same outline again, a third of its width lower
+	juce::Path	drop ( outline );
+	drop.applyTransform ( juce::AffineTransform::translation ( 0.0f, strokeWidth * 0.35f ) );
+	outline.addPath ( drop );
+
+	logoBounds = outline.getBounds ();
+
+	// Outline first, the letters painted over it
+	paths.push_back ( { UI::colors::logoOutline, std::move ( outline ) } );
+	paths.push_back ( { UI::colors::logo, std::move ( letters ) } );
 }
 //-----------------------------------------------------------------------------
 

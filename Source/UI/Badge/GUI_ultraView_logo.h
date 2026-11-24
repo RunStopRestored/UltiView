@@ -7,6 +7,8 @@
 class GUI_ultraView_logo final : public juce::Button
 {
 public:
+	// resource: an SVG (red fills = outline role, the rest = logo fill), or
+	// "text:<word>" for a logo set in the app font (UltiView's own name)
 	GUI_ultraView_logo ( const juce::String& name, const juce::String& resource );
 
 	// juce::Button
@@ -20,6 +22,7 @@ private:
 	};
 
 	void collectPaths ( const juce::Drawable& d, const juce::AffineTransform& parentTransform );
+	void buildTextLogo ( const juce::String& text );
 
 	std::vector<SvgOutline>	paths;
 	juce::Rectangle<float>	logoBounds;
