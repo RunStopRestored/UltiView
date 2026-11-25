@@ -40,6 +40,16 @@ back to the KERNAL keyboard buffer ($0277, count $C6) with
 URL: a writemem POST with a body leaves a file in the C64U's /Temp, and after about 330 of
 them every POST write fails. Ctrl+K switches the keyboard between the C64 and UltiView.
 
+## Shared C64U quirks
+
+`C:\Users\palad\Documents\Claude\Quirks` (private GitHub RunStopRestored/quirks) is the shared notebook of
+C64U / Ultimate hardware and firmware quirks from all the owner's projects. When the C64U misbehaves (REST,
+FTP, stream, keyboard input), read its `INDEX.md` first; add new findings there (its `README.md` has the
+rules), not only here. From this project: Q-057 (Ultimate menu and network keys, `machine:menu_button`),
+Q-058 (send the REST `:` unescaped). It also holds the facts above: `machine:input` (Q-020), the ~330
+writemem POSTs that fill /Temp (Q-023), the ping before a stream start (Q-027, Q-017), the stream's audio
+rate (Q-035), FTP MLSD (Q-025).
+
 Related project: Ultimidi (../Ultimidi, beside this repo), the C64U MIDI player this
 keyboard is used with; it reads keys from the keyboard buffer.
 
